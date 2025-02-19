@@ -1,0 +1,169 @@
+specification {
+    element person {
+        style {
+            shape person
+            color green
+        }
+    }
+    element softwareSystem
+    element container
+    element component
+}
+
+model {
+  user = person "Пользователь" "Пользователь социальной сети"
+
+  socialNetwork = softwareSystem "Социальная сеть" {
+    apiGateway = container "API Gateway" {
+      description "Маршрутизация запросов и управление доступом"
+      technology "Python, FastAPI"
+    }
+
+    userService = container "User Service" {
+      description "Управление пользователями и аутентификацией"
+      technology "Python, FastAPI"
+      
+      component userController "User Controller" "Обрабатывает HTTP запросы"
+      component authService "Auth Service" "Управляет аутентификацией"
+      component userServiceComponent "User Service" "Управляет данными пользователей"
+      component userRepository "User Repository" "Доступ к данным пользователей"
+      component kafkaProducer "Kafka Producer" "Отправляет события пользователей"
+    }
+
+    postService = container "Post Service" {
+      description "Управление постами и комментариями"
+      technology "Python, FastAPI"
+      
+      component postController "Post Controller" "Обрабатывает HTTP запросы"
+      component postServiceComponent "Post Service" "Управляет данными постов"
+      component postRepository "Post Repository" "Доступ к данным постов"
+      component commentService "Comment Service" "Управляет комментариями"
+      component commentRepository "Comment Repository" "Доступ к данным комментариев"
+      component kafkaProducer "Kafka Producer" "Отправляет события постов"
+    }
+
+    statisticsService = container "Statistics Service" {
+      description "Сбор и анализ статистики (лайки, просмотры, комментарии)"
+      technology "Go"
+      
+      component statisticsController "Statistics Controller" "Обрабатывает HTTP запросы"
+      component statisticsProcessor "Statistics Processor" "Анализирует данные"
+      component statisticsRepository "Statistics Repository" "Хранение статистики"
+      component kafkaConsumer "Kafka Consumer" "Потребляет события"
+    }
+
+    userDb = container "PostgreSQL (Users)" {
+      description "Хранение данных пользователей"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    postDb = container "PostgreSQL (Posts & Comments)" {
+      description "Хранение постов и комментариев"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    clickhouseDb = container "ClickHouse (Stats)" {
+      description "Хранение аналитических данных"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    kafka = container "Kafka" {
+      description "Обмен событиями между сервисами"
+      technology "Message Broker"
+      style {
+        shape queue
+      }
+    }
+    minio = container "MinIO" {
+        description "Локальное объектное хранилище для медиафайлов (S3-совместимое)"
+        technology "Object Storage"
+        style {
+            shape cylinder
+        }
+    }
+    redis = container "Redis" {
+        description "In-memory data store для кэширования/сессий/быстрых операций"
+        technology "Redis"
+        style {
+            shape cylinder
+        }
+    }
+
+    monitoringSystem = container "Monitoring (Prometheus & Grafana)" {
+        description "Сбор метрик и визуализация"
+        technology "Observability"
+    }
+
+    observability = container "Jaeger" {
+    description "Система распределённой трассировки"
+    technology "Jaeger (OpenTelemetry)"
+        style {
+            shape cylinder
+        }
+    }   
+
+
+  }
+
+  user -> socialNetwork.apiGateway "Использует" "HTTPS"
+  
+  socialNetwork.apiGateway -> socialNetwork.userService "Маршрутизирует" "JSON/HTTPS"
+  socialNetwork.apiGateway -> socialNetwork.postService "Маршрутизирует" "JSON/HTTPS"
+  socialNetwork.apiGateway -> socialNetwork.statisticsService "Маршрутизирует" "JSON/HTTPS"
+
+  socialNetwork.userService -> socialNetwork.userDb "Читает/Пишет" "SQL"
+  socialNetwork.postService -> socialNetwork.postDb "Читает/Пишет" "SQL"
+  socialNetwork.statisticsService -> socialNetwork.clickhouseDb "Читает/Пишет" "SQL"
+
+  socialNetwork.userService -> socialNetwork.kafka "Публикует/Подписывается" "user_events"
+  socialNetwork.postService -> socialNetwork.kafka "Публикует/Подписывается" "post_events"
+  socialNetwork.statisticsService -> socialNetwork.kafka "Подписывается" "user_events, post_events"
+
+  socialNetwork.userService.userController -> socialNetwork.userService.authService "Использует"
+  socialNetwork.userService.userController -> socialNetwork.userService.userServiceComponent "Использует"
+  socialNetwork.userService.authService -> socialNetwork.userService.userServiceComponent "Использует"
+  socialNetwork.userService.userServiceComponent -> socialNetwork.userService.userRepository "Использует"
+  socialNetwork.userService.userServiceComponent -> socialNetwork.userService.kafkaProducer "Использует"
+
+  socialNetwork.postService.postController -> socialNetwork.postService.postServiceComponent "Использует"
+  socialNetwork.postService.postController -> socialNetwork.postService.commentService "Использует"
+  socialNetwork.postService.postServiceComponent -> socialNetwork.postService.postRepository "Использует"
+  socialNetwork.postService.commentService -> socialNetwork.postService.commentRepository "Использует"
+  socialNetwork.postService.postServiceComponent -> socialNetwork.postService.kafkaProducer "Использует"
+
+  socialNetwork.statisticsService.statisticsController -> socialNetwork.statisticsService.statisticsProcessor "Использует"
+  socialNetwork.statisticsService.statisticsProcessor -> socialNetwork.statisticsService.statisticsRepository "Использует"
+  socialNetwork.statisticsService.statisticsProcessor -> socialNetwork.statisticsService.kafkaConsumer "Использует"
+
+  socialNetwork.postService -> socialNetwork.minio "Загружает/получает медиафайлы" "S3-compatible API"
+
+  socialNetwork.userService -> socialNetwork.redis "Чтение/запись сессий" "Redis protocol"
+  socialNetwork.apiGateway -> socialNetwork.redis "Кэширует данные" "Redis protocol"
+
+  socialNetwork.apiGateway -> monitoringSystem "Отправляет метрики" "HTTP (scrape)"
+  socialNetwork.postService -> monitoringSystem "Отправляет метрики" "HTTP (scrape)"
+  socialNetwork.userService -> monitoringSystem "Отправляет метрики" "HTTP (scrape)"
+  socialNetwork.statisticsService -> monitoringSystem "Отправляет метрики" "HTTP (scrape)"
+
+
+  socialNetwork.apiGateway -> observability "Отправляет трейс-спаны" "OTLP or Jaeger protocol"
+  socialNetwork.userService -> observability "Отправляет трейс-спаны" "OTLP or Jaeger protocol"
+  socialNetwork.postService -> observability "Отправляет трейс-спаны" "OTLP or Jaeger protocol"
+  socialNetwork.statisticsService -> observability "Отправляет трейс-спаны" "OTLP or Jaeger protocol"
+
+}
+
+views {
+   view index {
+        include *
+    }
+}
