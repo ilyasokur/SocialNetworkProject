@@ -6,6 +6,9 @@ from app.infrastructure.dao import UserDAO
 from app.domain.schemas import UserCreate, UserLogin, UserResponse
 import jwt
 import requests
+from jose import jwt
+from jose.exceptions import JOSEError
+from app.config import settings
 
 router = APIRouter()
 
@@ -16,23 +19,21 @@ def get_db():
     finally:
         db.close()
 
-
-KEYCLOAK_URL = "http://keycloak:8080/realms/MyApp/protocol/openid-connect/certs"
-
 def verify_token(token: str):
     try:
-        headers = jwt.get_unverified_header(token)
-        kid = headers["kid"]
-        certs = requests.get(KEYCLOAK_URL).json()["keys"]
-        public_key = next(k["x5c"][0] for k in certs if k["kid"] == kid)
-
-        payload = jwt.decode(token, public_key, algorithms=["RS256"])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
+        jwks_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/certs"
+        jwks = requests.get(jwks_url).json()
+        return jwt.decode(
+            token,
+            jwks,
+            algorithms=["RS256"],
+            audience=settings.KEYCLOAK_CLIENT_ID,
+            options={"verify_aud": False}
+        )
+    except JOSEError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    
+    
 @router.post("/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     dao = UserDAO(db)
@@ -54,7 +55,8 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 @router.get("/profile", response_model=UserResponse)
 def get_profile(token: str = Depends(verify_token), db: Session = Depends(get_db)):
     dao = UserDAO(db)
-    user = dao.get_user_by_username(token["sub"])
+    print(token["sub"])
+    user = dao.get_user_by_keycloak_id(token["sub"])
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

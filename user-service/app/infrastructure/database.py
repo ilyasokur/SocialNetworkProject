@@ -7,7 +7,3 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/use
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-def init_db():
-    from app.domain.models import User
-    Base.metadata.create_all(bind=engine)

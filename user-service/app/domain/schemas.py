@@ -3,8 +3,8 @@ from typing import Optional
 
 class UserCreate(BaseModel):
     username: str
-    email: EmailStr
-    password: str
+    email: str
+    hashed_password: str
 
 class UserLogin(BaseModel):
     username: str

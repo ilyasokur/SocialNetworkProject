@@ -19,6 +19,9 @@ pydantic = {extras = ["email"], version = "^2.10.6"}
 requests = "^2.32.3"
 bcrypt = "^4.3.0"
 cryptography = "^44.0.2"
+asyncpg = "^0.30.0"
+python-jose = {extras = ["cryptography"], version = "^3.4.0"}
+pydantic-settings = "^2.8.1"
 
 
 [tool.poetry.group.dev.dependencies]
