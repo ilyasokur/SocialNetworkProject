@@ -1,25 +1,30 @@
-from fastapi import FastAPI
-from app.api.routes import router
+import grpc
+from concurrent import futures
+import asyncio
+import grpc.aio
+import time
+from generated import post_pb2_grpc, post_pb2
+from service.grpc_svc import PostRPCService
+from service.post_svc import PostService
+from infrastructure.dao import PostDAO
+from infrastructure.database import SessionLocal
+from grpc_reflection.v1alpha import reflection
 
-app = FastAPI(
-    title="User Service",
-    description="Сервис управления пользователями с аутентификацией через Keycloak",
-    version="1.0.0"
-)
+async def serve():
+    server = grpc.aio.server()
+    db = SessionLocal()
+    post_pb2_grpc.add_SocialServiceServicer_to_server(PostRPCService(PostService(PostDAO(db))), server)
 
-app.include_router(router, prefix="/api/v1")
+    SERVICE_NAMES = (
+        post_pb2.DESCRIPTOR.services_by_name['SocialService'].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(SERVICE_NAMES, server)
+    
+    server.add_insecure_port('[::]:50051')
+    print("Starting server on port 50051...")
+    await server.start()
+    await server.wait_for_termination()
 
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
-
+if __name__ == '__main__':
+    asyncio.run(serve())

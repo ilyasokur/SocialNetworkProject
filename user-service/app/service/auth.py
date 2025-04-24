@@ -75,7 +75,7 @@ class AuthService:
             "grant_type": "password"
         }
 
-        response = requests.post(token_url.replace("localhost", "keycloak"), data=data)
+        response = requests.post(token_url, data=data)
         
 
         return response.json()

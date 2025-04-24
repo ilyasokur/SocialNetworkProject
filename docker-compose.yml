@@ -7,7 +7,7 @@ services:
       - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=testing
       - KEYCLOAK_CLIENT_ID=user-service
-      - KEYCLOAK_CLIENT_SECRET=Es0IqbYVisWsjKLQ3EqgnWY03ydu7fRR
+      - KEYCLOAK_CLIENT_SECRET=Myhz2XpQSjEqIFvlopUuWdJuynTgKZBD
       - KEYCLOAK_ADMIN_USER=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
     ports:
@@ -15,6 +15,13 @@ services:
     depends_on:
       - db
       - keycloak
+
+  post-service:
+    build: ./post-service    
+    ports:
+      - "50051:50051"
+    depends_on:
+      - db_post
 
   proxy-service:
     build: ./api-gateway

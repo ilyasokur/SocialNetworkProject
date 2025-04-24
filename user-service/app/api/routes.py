@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from app.infrastructure.database import SessionLocal
 from app.service.auth import AuthService
@@ -19,12 +19,12 @@ def get_db():
     finally:
         db.close()
 
-def verify_token(token: str):
+def verify_token(authorization: str = Header(...)):
     try:
         jwks_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/certs"
         jwks = requests.get(jwks_url).json()
         return jwt.decode(
-            token,
+            authorization,
             jwks,
             algorithms=["RS256"],
             audience=settings.KEYCLOAK_CLIENT_ID,
@@ -52,8 +52,8 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
     
-@router.get("/profile", response_model=UserResponse)
-def get_profile(token: str = Depends(verify_token), db: Session = Depends(get_db)):
+@router.get("/validate", response_model=UserResponse)
+def get_profile(token: dict = Depends(verify_token), db: Session = Depends(get_db)):
     dao = UserDAO(db)
     print(token["sub"])
     user = dao.get_user_by_keycloak_id(token["sub"])

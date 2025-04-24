@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Request, HTTPException
 import httpx
 from fastapi.middleware.cors import CORSMiddleware
+import grpc
+from factory import GrpcFactory
 
 app = FastAPI()
 
-# Настройка CORS (для фронтенда)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,14 +15,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Конфигурация сервисов
 SERVICES = {
-    "user": "http://user-service:8001",
+    "user": "http://localhost:8001",
     "posts": "http://post-service:8002",
-    "promos": "http://promo-service:8003"
 }
 
-# Публичные эндпоинты (не требуют авторизации)
+
 PUBLIC_ENDPOINTS = {
     "user": [
         "/api/v1/login",
@@ -29,21 +29,24 @@ PUBLIC_ENDPOINTS = {
     ],
     "posts": [
         "/api/v1/health"
-    ],
-    "promos": [
-        "/api/v1/health"
     ]
 }
 
+
+async def validate_token(auth_header: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        resp = await client.get("http://localhost:8001/api/v1/validate", headers={"Authorization": auth_header})
+
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return resp.json()
+
 def is_public_endpoint(service: str, path: str) -> bool:
-    """Проверяет, является ли endpoint публичным"""
     if service not in PUBLIC_ENDPOINTS:
         return False
     
-    # Нормализуем путь
     full_path = f"/{path}" if not path.startswith("/") else path
     
-    # Проверяем точное совпадение или префикс
     return any(
         full_path == public_path or 
         full_path.startswith(public_path + "/")
@@ -52,14 +55,11 @@ def is_public_endpoint(service: str, path: str) -> bool:
 
 @app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(service: str, path: str, request: Request):
-    # Проверка существования сервиса
     if service not in SERVICES:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    # Проверка публичного эндпоинта
     is_public = is_public_endpoint(service, path)
     
-    # Для защищенных эндпоинтов проверяем наличие токена
     if not is_public:
         auth_header = request.headers.get("Authorization")
         if not auth_header:
@@ -69,7 +69,6 @@ async def proxy(service: str, path: str, request: Request):
                 headers={"WWW-Authenticate": "Bearer"}
             )
 
-    # Подготовка запроса к целевому сервису
     target_url = f"{SERVICES[service]}/{path}"
     headers = {
         k: v for k, v in request.headers.items()
@@ -78,8 +77,7 @@ async def proxy(service: str, path: str, request: Request):
 
     try:
         async with httpx.AsyncClient() as client:
-            # Обработка разных типов запросов
-            if request.method in ["POST", "PUT", "PATCH"]:
+            if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
                 content_type = request.headers.get("content-type", "")
                 
                 if "application/x-www-form-urlencoded" in content_type:
@@ -97,6 +95,22 @@ async def proxy(service: str, path: str, request: Request):
                     except:
                         json_data = None
                     
+                    print('test')
+
+                    if service == "posts":
+                        user = await validate_token(auth_header)
+                        json_data['user_id'] = str(user['id'])
+                        grpc_client = GrpcFactory()
+                        grpc_client = grpc_client.get_client("posts")
+                        method = getattr(grpc_client, path, None)
+                        print(method)
+                        if method is None:
+                            raise HTTPException(status_code=404, detail="method not found")
+                        
+                        response = await method(json_data)
+                        print(response)
+                        return response
+
                     response = await client.request(
                         request.method,
                         target_url,
@@ -105,6 +119,9 @@ async def proxy(service: str, path: str, request: Request):
                         timeout=30.0
                     )
             else:
+
+                
+
                 response = await client.request(
                     request.method,
                     target_url,
@@ -112,7 +129,6 @@ async def proxy(service: str, path: str, request: Request):
                     timeout=30.0
                 )
 
-            # Возвращаем ответ от сервиса
             return response.json()
 
     except httpx.ConnectError:

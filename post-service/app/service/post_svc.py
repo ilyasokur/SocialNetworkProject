@@ -1,24 +1,21 @@
 # app/service/auth.py
-import requests
-from jose import jwt
-from app.config import settings
-from app.infrastructure.dao import UserDAO
-from app.domain.schemas import PostCreate
-from passlib.context import CryptContext
+from config import settings
+from infrastructure.dao import PostDAO
+
 
 
 class PostService:
-    def __init__(self, dao: UserDAO):
+    def __init__(self, dao: PostDAO):
         self.dao = dao
         
-    async def create_post(self, post: PostCreate):
+    async def create_post(self, post: dict):
         return await self.dao.create_post(post)
     
     async def get_post_by_id(self, post_id: int):
         return await self.dao.get_post_by_id(post_id)
     
-    async def update_post(self):
-        return await self.dao.update_post()
+    async def update_post(self, post_data: dict):
+        return await self.dao.update_post(post_data)
 
-    async def delete_post(self):
-        return await self.dao.delete_post()
+    async def delete_post(self, id: str):
+        return await self.dao.delete_post(id)
