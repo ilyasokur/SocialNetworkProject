@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from domain.models import Post
 from sqlalchemy.exc import NoResultFound
 from typing import Optional
+from sqlalchemy import func
 
 class PostDAO:
     def __init__(self, db: Session):
@@ -81,3 +82,33 @@ class PostDAO:
             self.db.commit()
             return True
         return False
+    
+
+    async def get_posts_paginated(self, page: int = 1, page_size: int = 10) -> dict:
+        query = self.db.query(Post)
+        
+        total_query = self.db.query(func.count(Post.id))
+        total = total_query.scalar()
+
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
+        
+        posts = query.all()
+
+        return {
+            "posts": [
+                {
+                    "id": post.id,
+                    "title": post.title,
+                    "description": post.description,
+                    "user_id": post.user_id,
+                    "is_private": post.is_private,
+                    "tags": post.tags,
+                    "loyalty_platform": post.loyalty_platform,
+                    "created_at": post.created_at,
+                    "updated_at": post.updated_at
+                }
+                for post in posts
+            ],
+            "total": total
+        }

@@ -1,6 +1,6 @@
 from client.rpc.base import BaseGrpcClient
 from generated.post_pb2_grpc import SocialServiceStub
-from generated.post_pb2 import CreatePostRequest, UpdatePostRequest, DeleteRequest, GetRequest
+from generated.post_pb2 import CreatePostRequest, UpdatePostRequest, DeleteRequest, GetRequest, ListRequest
 
 class PostGrpcClient(BaseGrpcClient):
     def get_stub(self):
@@ -25,6 +25,11 @@ class PostGrpcClient(BaseGrpcClient):
         stub = self.get_stub()
         request = self.request_adapter.from_json(GetRequest, request)
         response = await stub.GetPost(request)
+        return self.request_adapter.to_json(response)
+    async def list_posts(self, request):
+        stub = self.get_stub()
+        request = self.request_adapter.from_json(ListRequest, request)
+        response = await stub.ListPosts(request)
         return self.request_adapter.to_json(response)
     
     

@@ -93,6 +93,25 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
             )
         )
 
+    def post_to_proto(self, post: dict) -> post_pb2.Post:
+        created_at = Timestamp()
+        created_at.FromDatetime(post["created_at"])
+
+        updated_at = Timestamp()
+        updated_at.FromDatetime(post["updated_at"])
+
+        return post_pb2.Post(
+            id=str(post["id"]),
+            title=post["title"],
+            description=post["description"],
+            user_id=post["user_id"],
+            is_private=post["is_private"],
+            tags=post["tags"],
+            loyalty_platform=post["loyalty_platform"],
+            created_at=created_at,
+            updated_at=updated_at
+        )
+
     async def DeletePost(self, request, context):
         success = await self.post_service.delete_post(request.id)
 
@@ -101,3 +120,16 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
             context.set_details("Post not found")
             return post_pb2.Empty()
         return post_pb2.Empty()
+    
+    async def ListPosts(self, request, context):
+        result = await self.post_service.get_posts_paginated(
+            page=request.page, page_size=request.page_size
+        )
+
+        posts_proto = [self.post_to_proto(post) for post in result["posts"]]
+
+        return post_pb2.ListPostsResponse(
+            posts=posts_proto,
+            total=result["total"]
+        )
+

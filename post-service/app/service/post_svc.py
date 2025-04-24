@@ -19,3 +19,6 @@ class PostService:
 
     async def delete_post(self, id: str):
         return await self.dao.delete_post(id)
+    
+    async def get_posts_paginated(self, page: int = 1, page_size: int = 10):
+        return await self.dao.get_posts_paginated(page, page_size)
