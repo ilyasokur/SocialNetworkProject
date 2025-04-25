@@ -25,13 +25,13 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
     
         created_post = await self.post_service.create_post(post_data)
     
-    
+        print('test2')
         return post_pb2.PostResponse(
             post=post_pb2.Post(
                 id=str(created_post["id"]),
                 title=created_post["title"],
                 description=created_post["description"],
-                user_id=created_post["user_id"],
+                user_id=str(created_post["user_id"]),
                 is_private=created_post["is_private"],
                 tags=created_post["tags"],
                 loyalty_platform=created_post["loyalty_platform"],
@@ -52,7 +52,7 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
                 id=str(post["id"]),
                 title=post["title"],
                 description=post["description"],
-                user_id=post["user_id"],
+                user_id=str(post["user_id"]),
                 is_private=post["is_private"],
                 tags=post["tags"],
                 loyalty_platform=post["loyalty_platform"],
@@ -84,7 +84,7 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
                 id=str(updated_post["id"]),
                 title=updated_post["title"],
                 description=updated_post["description"],
-                user_id=updated_post["user_id"],
+                user_id=str(updated_post["user_id"]),
                 is_private=updated_post["is_private"],
                 tags=updated_post["tags"],
                 loyalty_platform=updated_post["loyalty_platform"],
@@ -104,7 +104,7 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
             id=str(post["id"]),
             title=post["title"],
             description=post["description"],
-            user_id=post["user_id"],
+            user_id=str(post["user_id"]),
             is_private=post["is_private"],
             tags=post["tags"],
             loyalty_platform=post["loyalty_platform"],
@@ -131,5 +131,49 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
         return post_pb2.ListPostsResponse(
             posts=posts_proto,
             total=result["total"]
+        )
+    async def LikePost(self, request, context):
+        post_id = request.post_id
+        user_id = request.user_id
+
+        success = await self.post_service.like_post(post_id, user_id)
+
+        if not success:
+            context.set_code(post_pb2.NOT_FOUND)
+            context.set_details("Post not found")
+            return post_pb2.Empty()
+
+        return post_pb2.Empty()
+    
+    async def AddComment(self, request, context):
+        
+        comment_info = await self.post_service.add_comment(post_id=request.post_id, user_id=request.user_id, content=request.content)
+        created_at = Timestamp()
+        created_at.FromDatetime(comment_info["created_at"])
+        return post_pb2.CommentResponse(
+            comment = post_pb2.Comment(id=str(comment_info["id"]),
+            post_id=str(comment_info["post_id"]),
+            user_id=str(comment_info["user_id"]),
+            content=comment_info["content"],
+            created_at=created_at)
+        )
+    
+    async def ListComments(self, request, context):
+
+        comments_data = await self.post_service.get_comments_by_post(post_id=request.post_id, page=request.page, page_size=request.page_size)
+
+        updated_at = Timestamp()
+        return post_pb2.CommentListResponse(
+            comments=[
+                post_pb2.Comment(
+                    id=str(comment["id"]),
+                    post_id=str(comment["post_id"]),
+                    user_id=str(comment["user_id"]),
+                    content=comment["content"],
+                    created_at=updated_at.FromDatetime(comment["created_at"])
+                )
+                for comment in comments_data["comments"]
+            ],
+            total=comments_data["total"]
         )
 

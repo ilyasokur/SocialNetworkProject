@@ -28,7 +28,8 @@ PUBLIC_ENDPOINTS = {
         "/api/v1/health"
     ],
     "posts": [
-        "/api/v1/health"
+        "/api/v1/health",
+        "list_comments",
     ]
 }
 
@@ -98,8 +99,11 @@ async def proxy(service: str, path: str, request: Request):
                     print('test')
 
                     if service == "posts":
-                        user = await validate_token(auth_header)
-                        json_data['user_id'] = str(user['id'])
+                        if path not in PUBLIC_ENDPOINTS["posts"]:
+                            print(path)
+                            user = await validate_token(auth_header)
+                            json_data['user_id'] = str(user['id'])
+                            print('test')
                         grpc_client = GrpcFactory()
                         grpc_client = grpc_client.get_client("posts")
                         method = getattr(grpc_client, path, None)

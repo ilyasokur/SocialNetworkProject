@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, func, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, func, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 import uuid
@@ -10,7 +10,7 @@ class Post(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    user_id = Column(String, index=True, nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
     is_private = Column(Boolean, default=False)
     tags = Column(ARRAY(String), default=[])
     loyalty_platform = Column(String, nullable=True)
@@ -25,7 +25,17 @@ class Comment(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(String, nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
     content = Column(String, nullable=False)
-
     post = relationship("Post", back_populates="comments")
+
+class PostLike(Base):
+    __tablename__ = "post_likes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("post_id", "user_id", name="unique_post_like"),
+    )

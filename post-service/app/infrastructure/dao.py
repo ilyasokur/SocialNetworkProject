@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from domain.models import Post
+from domain.models import Post, PostLike, Comment
 from sqlalchemy.exc import NoResultFound
 from typing import Optional
 from sqlalchemy import func
+import datetime
 
 class PostDAO:
     def __init__(self, db: Session):
@@ -112,3 +113,67 @@ class PostDAO:
             ],
             "total": total
         }
+    
+    async def like_post(self, post_id: str, user_id: str) -> dict:
+        
+        post = self.db.query(Post).filter(Post.id == post_id).one()
+
+        existing_like = self.db.query(PostLike).filter(PostLike.post_id == post_id, PostLike.user_id == user_id).first()
+        if existing_like:
+            raise ValueError("User has already liked this post.")
+        
+        new_like = PostLike(post_id=post_id, user_id=user_id)
+        self.db.add(new_like)
+        self.db.commit()
+        
+        return {
+            "post_id": new_like.post_id,
+            "user_id": new_like.user_id,
+            "like_id": new_like.id
+        }
+    
+    async def add_comment(self, post_id: str, user_id: str, content: str) -> dict:
+        try:
+            post = self.db.query(Post).filter(Post.id == post_id).one()
+
+            comment = Comment(post_id=post_id, user_id=user_id, content=content)
+            self.db.add(comment)
+            self.db.commit()
+            self.db.refresh(comment)
+
+            return {
+                "id": comment.id,
+                "post_id": comment.post_id,
+                "user_id": comment.user_id,
+                "content": comment.content,
+                "created_at": datetime.datetime.now()
+            }
+        except NoResultFound:
+            raise ValueError("Post not found.")
+
+    async def get_comments_by_post(self, post_id: str, page: int = 1, page_size: int = 10) -> dict:
+        try:
+            post = self.db.query(Post).filter(Post.id == post_id).one()
+
+            query = self.db.query(Comment).filter(Comment.post_id == post_id)
+
+            offset = (page - 1) * page_size
+            comments = query.offset(offset).limit(page_size).all()
+
+            total_comments = self.db.query(func.count(Comment.id)).filter(Comment.post_id == post_id).scalar()
+
+            return {
+                "comments": [
+                    {
+                        "id": comment.id,
+                        "user_id": comment.user_id,
+                        "content": comment.content,
+                        "created_at": comment.created_at
+                    }
+                    for comment in comments
+                ],
+                "total": total_comments
+            }
+        except NoResultFound:
+            raise ValueError("Post not found.")
+

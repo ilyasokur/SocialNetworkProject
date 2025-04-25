@@ -5,13 +5,17 @@ from app.config import settings
 from app.infrastructure.dao import UserDAO
 from app.domain.schemas import UserCreate, UserLogin
 from passlib.context import CryptContext
+from app.service.kafka_producer import KafkaProducerService
+import asyncio
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
-    def __init__(self, dao: UserDAO):
+    def __init__(self, dao: UserDAO, broker: KafkaProducerService):
         self.dao = dao
         self.keycloak_openid_config = self._get_openid_config()
+        self.broker = broker
+        
 
     def _get_openid_config(self):
         url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/.well-known/openid-configuration"
@@ -62,7 +66,9 @@ class AuthService:
 
         hashed_password = pwd_context.hash(user_data.hashed_password)
         user_data.hashed_password = hashed_password
-        return self.dao.create_user(user_data, keycloak_id)
+        user = self.dao.create_user(user_data, keycloak_id)
+        self.broker.send("users", {"action": "create", "user": {"id": str(user.id), "username": user.username, "email": user.email, "created_at": str(user.created_at.isoformat())}})
+        return user
 
     def authenticate_user(self, login_data: UserLogin):
         token_url = self.keycloak_openid_config["token_endpoint"]

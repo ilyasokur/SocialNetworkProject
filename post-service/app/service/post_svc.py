@@ -22,3 +22,9 @@ class PostService:
     
     async def get_posts_paginated(self, page: int = 1, page_size: int = 10):
         return await self.dao.get_posts_paginated(page, page_size)
+    async def like_post(self, post_id: int, user_id: int):
+        return await self.dao.like_post(post_id, user_id)
+    async def add_comment(self, post_id: int, user_id: int, content: str):
+        return await self.dao.add_comment(post_id, user_id, content)
+    async def get_comments_by_post(self, post_id: int, page: int = 1, page_size: int = 10):
+        return await self.dao.get_comments_by_post(post_id, page, page_size)
