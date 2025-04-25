@@ -9,11 +9,14 @@ from service.post_svc import PostService
 from infrastructure.dao import PostDAO
 from infrastructure.database import SessionLocal
 from grpc_reflection.v1alpha import reflection
+from service.kafka_producer import KafkaProducerService
 
 async def serve():
     server = grpc.aio.server()
     db = SessionLocal()
-    post_pb2_grpc.add_SocialServiceServicer_to_server(PostRPCService(PostService(PostDAO(db))), server)
+    kafka_producer = KafkaProducerService()
+    post_service = PostService(PostDAO(db), kafka_producer)
+    post_pb2_grpc.add_SocialServiceServicer_to_server(PostRPCService(post_service), server)
 
     SERVICE_NAMES = (
         post_pb2.DESCRIPTOR.services_by_name['SocialService'].full_name,

@@ -146,7 +146,7 @@ class PostDAO:
                 "post_id": comment.post_id,
                 "user_id": comment.user_id,
                 "content": comment.content,
-                "created_at": datetime.datetime.now()
+                "created_at": comment.created_at
             }
         except NoResultFound:
             raise ValueError("Post not found.")

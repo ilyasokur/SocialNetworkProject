@@ -349,6 +349,25 @@ files = [
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
 
 [[package]]
+name = "kafka-python"
+version = "2.1.5"
+description = "Pure Python client for Apache Kafka"
+optional = false
+python-versions = "*"
+files = [
+    {file = "kafka_python-2.1.5-py2.py3-none-any.whl", hash = "sha256:205953e581c0371cada35bebdacc58ac7dee6c3f9e8d95b9a6a0a7bacc054ca0"},
+    {file = "kafka_python-2.1.5.tar.gz", hash = "sha256:6765c25440046cdadeb9c31469566be259d50802d27d4f8aae86d9ae755b78e2"},
+]
+
+[package.extras]
+benchmarks = ["pyperf"]
+crc32c = ["crc32c"]
+lz4 = ["lz4"]
+snappy = ["python-snappy"]
+testing = ["mock", "pytest", "pytest-mock", "pytest-timeout"]
+zstd = ["zstandard"]
+
+[[package]]
 name = "protobuf"
 version = "6.30.2"
 description = ""
@@ -735,4 +754,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "6ab8b41a11dc7d60a970d5c4c1a75c0db9ec1e7d697b060ba272f8bfd6c503bb"
+content-hash = "8c4965471cbea4ccf0219293ea01bdc953bf0393ae034d97af32112392c54c84"

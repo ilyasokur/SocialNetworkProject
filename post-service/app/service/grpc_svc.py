@@ -163,11 +163,11 @@ class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
         comments_data = await self.post_service.get_comments_by_post(post_id=request.post_id, page=request.page, page_size=request.page_size)
 
         updated_at = Timestamp()
-        return post_pb2.CommentListResponse(
+        return post_pb2.CommentsListResponse(
             comments=[
                 post_pb2.Comment(
                     id=str(comment["id"]),
-                    post_id=str(comment["post_id"]),
+                    post_id=str(request.post_id),
                     user_id=str(comment["user_id"]),
                     content=comment["content"],
                     created_at=updated_at.FromDatetime(comment["created_at"])
