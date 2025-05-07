@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
-from app.infrastructure.database import SessionLocal
 from app.service.auth import AuthService
 from app.infrastructure.dao import UserDAO
 from app.domain.schemas import UserCreate, UserLogin, UserResponse
@@ -9,22 +8,19 @@ import requests
 from jose import jwt
 from jose.exceptions import JOSEError
 from app.config import settings
+from app.service.kafka_producer import KafkaProducerService
+from app.factories import get_db, get_kafka_producer
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-def verify_token(token: str):
+
+def verify_token(authorization: str = Header(...)):
     try:
         jwks_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/certs"
         jwks = requests.get(jwks_url).json()
         return jwt.decode(
-            token,
+            authorization,
             jwks,
             algorithms=["RS256"],
             audience=settings.KEYCLOAK_CLIENT_ID,
@@ -35,25 +31,25 @@ def verify_token(token: str):
     
     
 @router.post("/register", response_model=UserResponse)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, db: Session = Depends(get_db), broker: KafkaProducerService = Depends(get_kafka_producer)):
     dao = UserDAO(db)
-    auth_service = AuthService(dao)
+    auth_service = AuthService(dao, broker)
     try:
         return auth_service.register_user(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(user: UserLogin, db: Session = Depends(get_db), broker: KafkaProducerService = Depends(get_kafka_producer)):
     dao = UserDAO(db)
-    auth_service = AuthService(dao)
+    auth_service = AuthService(dao, broker)
     try:
         return auth_service.authenticate_user(user)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
     
-@router.get("/profile", response_model=UserResponse)
-def get_profile(token: str = Depends(verify_token), db: Session = Depends(get_db)):
+@router.get("/validate", response_model=UserResponse)
+def get_profile(token: dict = Depends(verify_token), db: Session = Depends(get_db)):
     dao = UserDAO(db)
     print(token["sub"])
     user = dao.get_user_by_keycloak_id(token["sub"])
