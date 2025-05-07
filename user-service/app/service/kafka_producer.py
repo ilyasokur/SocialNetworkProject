@@ -10,7 +10,7 @@ class KafkaProducerService:
             cls._instance._initialized = False
         return cls._instance
     
-    def __init__(self, bootstrap_servers='localhost:9092'):
+    def __init__(self, bootstrap_servers='broker:29092'):
         if not self._initialized:
             self.producer = KafkaProducer(
                 bootstrap_servers=bootstrap_servers,

@@ -4,7 +4,7 @@ from client.rpc.adapter import RequestAdapter
 class GrpcFactory:
     def __init__(self):
         self.services = {
-            "posts": lambda: PostGrpcClient("localhost:50051", RequestAdapter),
+            "posts": lambda: PostGrpcClient("post-service:50051", RequestAdapter),
         }
 
     def get_client(self, service_name: str):

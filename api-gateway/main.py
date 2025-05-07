@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 SERVICES = {
-    "user": "http://localhost:8001",
+    "user": "http://user-service:8001",
     "posts": "http://post-service:8002",
 }
 
@@ -36,7 +36,7 @@ PUBLIC_ENDPOINTS = {
 
 async def validate_token(auth_header: str) -> dict:
     async with httpx.AsyncClient() as client:
-        resp = await client.get("http://localhost:8001/api/v1/validate", headers={"Authorization": auth_header})
+        resp = await client.get("http://user-service:8001/api/v1/validate", headers={"Authorization": auth_header})
 
         if resp.status_code != 200:
             raise HTTPException(status_code=401, detail="Invalid token")

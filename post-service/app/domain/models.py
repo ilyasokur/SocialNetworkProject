@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Boolean, DateTime, func, ForeignKey, Uniq
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 import uuid
-from infrastructure.database import Base
+from app.infrastructure.database import Base
 
 class Post(Base):
     __tablename__ = "posts"

@@ -1,10 +1,10 @@
-import generated.post_pb2_grpc
-from generated import post_pb2
-from service.post_svc import PostService
+from app.generated import post_pb2_grpc
+from app.generated import post_pb2
+from app.service.post_svc import PostService
 from google.protobuf.timestamp_pb2 import Timestamp
 
 
-class PostRPCService(generated.post_pb2_grpc.SocialServiceServicer):
+class PostRPCService(post_pb2_grpc.SocialServiceServicer):
     def __init__(self, post_service: PostService):
         self.post_service = post_service
 

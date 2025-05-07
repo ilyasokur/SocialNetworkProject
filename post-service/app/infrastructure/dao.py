@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from domain.models import Post, PostLike, Comment
+from app.domain.models import Post, PostLike, Comment
 from sqlalchemy.exc import NoResultFound
 from typing import Optional
 from sqlalchemy import func

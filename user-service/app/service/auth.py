@@ -19,7 +19,7 @@ class AuthService:
 
     def _get_openid_config(self):
         url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/.well-known/openid-configuration"
-        return requests.get(url).json()
+        return requests.get(url.replace('localhost', 'keycloak',1)).json()
 
     def _get_admin_token(self):
         url = f"{settings.KEYCLOAK_URL}/realms/master/protocol/openid-connect/token"
@@ -29,7 +29,7 @@ class AuthService:
             "password": settings.KEYCLOAK_ADMIN_PASSWORD,
             "grant_type": "password"
         }
-        response = requests.post(url, data=data)
+        response = requests.post(url.replace('localhost', 'keycloak',1), data=data)
         return response.json()["access_token"]
 
     def register_user(self, user_data: UserCreate):
@@ -52,7 +52,7 @@ class AuthService:
             }]
         }
 
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url.replace('localhost', 'keycloak',1), json=payload, headers=headers)
 
         if response.status_code != 201:
             raise ValueError(f"Failed to create user in Keycloak: {response.text}")
@@ -81,7 +81,7 @@ class AuthService:
             "grant_type": "password"
         }
 
-        response = requests.post(token_url, data=data)
+        response = requests.post(token_url.replace('localhost', 'keycloak',1), data=data)
         
 
         return response.json()

@@ -1,6 +1,6 @@
-from config import settings
-from infrastructure.dao import PostDAO
-from service.kafka_producer import KafkaProducerService
+from app.config import settings
+from app.infrastructure.dao import PostDAO
+from app.service.kafka_producer import KafkaProducerService
 
 
 

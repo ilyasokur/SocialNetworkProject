@@ -3,13 +3,13 @@ from concurrent import futures
 import asyncio
 import grpc.aio
 import time
-from generated import post_pb2_grpc, post_pb2
-from service.grpc_svc import PostRPCService
-from service.post_svc import PostService
-from infrastructure.dao import PostDAO
-from infrastructure.database import SessionLocal
+from app.generated import post_pb2_grpc, post_pb2
+from app.service.grpc_svc import PostRPCService
+from app.service.post_svc import PostService
+from app.infrastructure.dao import PostDAO
+from app.infrastructure.database import SessionLocal
 from grpc_reflection.v1alpha import reflection
-from service.kafka_producer import KafkaProducerService
+from app.service.kafka_producer import KafkaProducerService
 
 async def serve():
     server = grpc.aio.server()
