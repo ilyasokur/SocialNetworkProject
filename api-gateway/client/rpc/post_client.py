@@ -48,3 +48,4 @@ class PostGrpcClient(BaseGrpcClient):
         return self.request_adapter.to_json(response)
     
     
+
