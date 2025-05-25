@@ -134,7 +134,6 @@ func (s *StatsServer) GetTopUsers(ctx context.Context, req *proto.GetTopRequest)
 	return response, nil
 }
 
-// Helper functions
 func parseDateRange(fromStr, toStr string) (time.Time, time.Time, error) {
 	from, err := time.Parse("2006-01-02", fromStr)
 	if err != nil {

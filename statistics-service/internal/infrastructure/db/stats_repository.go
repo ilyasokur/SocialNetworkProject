@@ -12,7 +12,7 @@ import (
 )
 
 type ClickHouseStatsRepository struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewClickHouseStatsRepository(dsn string) (*ClickHouseStatsRepository, error) {
@@ -29,7 +29,7 @@ func NewClickHouseStatsRepository(dsn string) (*ClickHouseStatsRepository, error
 		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
 	}
 
-	return &ClickHouseStatsRepository{db: conn}, nil
+	return &ClickHouseStatsRepository{DB: conn}, nil
 }
 
 func (r *ClickHouseStatsRepository) GetPostStats(ctx context.Context, postID string) (*entities.PostStats, error) {
@@ -45,7 +45,7 @@ func (r *ClickHouseStatsRepository) GetPostStats(ctx context.Context, postID str
 
 	var stats entities.PostStats
 	stats.PostID = postID
-	err := r.db.QueryRowContext(ctx, query, postID).Scan(
+	err := r.DB.QueryRowContext(ctx, query, postID).Scan(
 		&stats.Views,
 		&stats.Likes,
 		&stats.Comments,
@@ -79,7 +79,7 @@ func (r *ClickHouseStatsRepository) getPostDynamics(ctx context.Context, postID 
 		ORDER BY date
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, postID, eventType, from, to)
+	rows, err := r.DB.QueryContext(ctx, query, postID, eventType, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query dynamics: %w", err)
 	}
@@ -129,7 +129,7 @@ func (r *ClickHouseStatsRepository) GetTopPosts(ctx context.Context, statType en
 		LIMIT ?
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, eventType, limit)
+	rows, err := r.DB.QueryContext(ctx, query, eventType, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query top posts: %w", err)
 	}
@@ -175,7 +175,7 @@ func (r *ClickHouseStatsRepository) GetTopUsers(ctx context.Context, statType en
 		LIMIT ?
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, eventType, limit)
+	rows, err := r.DB.QueryContext(ctx, query, eventType, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query top users: %w", err)
 	}
@@ -215,7 +215,7 @@ func (r *ClickHouseStatsRepository) recordEvent(ctx context.Context, postID, use
 		VALUES (?, ?, ?, ?)
 	`
 	fmt.Println("test")
-	_, err := r.db.ExecContext(ctx, query, time.Now(), postID, userID, eventType)
+	_, err := r.DB.ExecContext(ctx, query, time.Now(), postID, userID, eventType)
 	if err != nil {
 		return fmt.Errorf("failed to record event: %w", err)
 	}

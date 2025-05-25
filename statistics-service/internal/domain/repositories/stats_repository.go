@@ -1,4 +1,3 @@
-// stats_repository.go
 package repositories
 
 import (
