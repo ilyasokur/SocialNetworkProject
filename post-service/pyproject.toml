@@ -19,6 +19,9 @@ kafka-python = "^2.1.5"
 pytest = "^8.3.5"
 alembic = "^1.15.2"
 asyncpg = "^0.30.0"
+pytest-asyncio = "^1.0.0"
+aiosqlite = "^0.21.0"
+grpcio-testing = "^1.72.1"
 
 
 [build-system]

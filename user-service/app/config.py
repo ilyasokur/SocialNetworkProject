@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     KEYCLOAK_URL: str = "http://keycloak:8080"
     KEYCLOAK_REALM: str = "testing"
     KEYCLOAK_CLIENT_ID: str = "user-service"
-    KEYCLOAK_CLIENT_SECRET: str = "tsCTJplazzdlgxEliwYdmtsxT8KVCwPD"
+    KEYCLOAK_CLIENT_SECRET: str = "QlxvhiVmR8Iw6qeU5LcfM3chlln24Var"
     KEYCLOAK_ADMIN_USER: str = "admin"
     KEYCLOAK_ADMIN_PASSWORD: str = "admin"
     
